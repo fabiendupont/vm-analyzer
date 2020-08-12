@@ -1,0 +1,21 @@
+{ 
+    "files": [
+        { "path": "/etc/*.conf", "collect_content": false },
+        { "path": "/etc/hosts", "collect_content": false }, 
+        { "path": "/etc/redhat-access-insights/machine-id", "collect_content": false },
+        { "path": "c:/windows/system32/*.scr", "collect_content": false },
+        { "path": "c:/windows/system32/msi*.*", "collect_content": false },
+        { "path": "c:/windows/system32/netapi32.dll", "collect_content": false },
+        { "path": "C://Program Files/Microsoft SQL Server/110", "collect_content": false },
+        { "path": "C://Program Files/Microsoft SQL Server/120", "collect_content": false },
+        { "path": "C://Program Files/Microsoft SQL Server/130", "collect_content": false },
+        { "path": "C://Program Files/Microsoft SQL Server/140", "collect_content": false },
+        { "path": "C://Program Files/IBM/WebSphere/AppServer", "collect_content": false },
+        { "path": "/etc/group", "collect_content": true },
+        { "path": "/etc/oraInst.loc", "collect_content": true },
+        { "path": "/u01/app/oraInventory", "collect_content": false },
+        { "path": "/opt/mssql/bin/mssql-conf", "collect_content": false },
+        { "path": "/usr/sap/hostctrl/exe/saphostctrl", "collect_content": false }, 
+        { "path": "/etc/.ibm/registry/InstallationManager.dat", "collect_content": false}
+    ]
+}

@@ -1,0 +1,32 @@
+#!/bin/sh -e
+
+# This is documented here:
+# https://docs.openshift.com/container-platform/3.11/creating_images/guidelines.html#openshift-specific-guidelines
+if ! whoami &>/dev/null; then
+  if [ -w /etc/passwd ]; then
+    echo "${USER_NAME:-vm-analyzer}:x:$(id -u):$(id -g):${USER_NAME:-vm-analyzer} user:${HOME}:/sbin/nologin" >> /etc/passwd
+  fi
+fi
+#####
+
+#set -x +e
+#VDDK="/opt/vmware-vix-disklib-distrib/"
+#ls -l "/usr/lib64/nbdkit/plugins/nbdkit-vddk-plugin.so"
+#ls -ld "$VDDK"
+## Use find to detect misplaced library. This does not allow for arbitrary
+## location, the path is hard-coded in wrapper.
+#lib="$(find "$VDDK" -name libvixDiskLib.so.6)"
+#LD_LIBRARY_PATH="$(dirname "$lib")" nbdkit --dump-plugin vddk
+#LIBGUESTFS_BACKEND='direct' libguestfs-test-tool
+#set +x -e
+#
+#echo
+#echo "...  OK  ..."
+#echo
+
+if [ ! -f "/data/input.json" ] ; then
+  echo "File /data/input.json not found. Exiting."
+  exit 1
+fi
+
+exec /usr/local/bin/vm-analyzer /data/input.json
