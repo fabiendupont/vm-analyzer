@@ -17,6 +17,9 @@ from pyVmomi import vim
 from pyVim.connect import SmartStubAdapter, VimSessionOrientedStub, Disconnect
 from pyVim.task import WaitForTask
 
+from flask import Flask, request, jsonify
+from flask_restful import Resource, Api, reqparse
+
 MANIFEST = {
     "files": [
         { "path": "/etc/*.conf", "collect_content": False },
@@ -335,18 +338,30 @@ class VmAnalyzer:
         vm_hardware = self._get_vm_hardware()
         vm_config = {
             "hardware": vm_hardware,
-            "software": self._get_vm_software(vm_hardware),
+            # "software": self._get_vm_software(vm_hardware),
         }
         return vm_config
 
 
-def main():
-    with open(sys.argv[1]) as f:
-        request = json.load(f)
+class Hardware(Resource):
+    def post(self):
+        input = request.get_json()
+        vm_config = VmAnalyzer(input).get_vm_config()
+        return jsonify(vm_config)
+    
 
-    vm_config = VmAnalyzer(request).get_vm_config()
-    print(json.dumps(vm_config, indent=4, separators=(',', ': ')))
+class Debug(Resource):
+    def get(self): 
+        return "<h1>Debug</h1><p>Working</p>"
 
+
+def main():     
+    app = Flask(__name__)
+    api = Api(app)
+    api.add_resource(Hardware, '/hardware')
+    api.add_resource(Debug, '/debug')
+    app.run()
+    
 
 if __name__ == '__main__':
     main()
