@@ -24,9 +24,4 @@ fi
 #echo "...  OK  ..."
 #echo
 
-if [ ! -f "/data/input.json" ] ; then
-  echo "File /data/input.json not found. Exiting."
-  exit 1
-fi
-
-exec /usr/local/bin/vm-analyzer /data/input.json
+exec /usr/local/bin/vm-analyzer
