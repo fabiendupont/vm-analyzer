@@ -360,7 +360,7 @@ def main():
     api = Api(app)
     api.add_resource(Hardware, '/hardware')
     api.add_resource(Debug, '/debug')
-    app.run()
+    app.run(host= '0.0.0.0')
     
 
 if __name__ == '__main__':
