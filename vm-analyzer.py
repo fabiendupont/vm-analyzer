@@ -239,12 +239,13 @@ class VmAnalyzer:
             nbdkit_cmd.extend(['file=[%s] %s' % (disk["storage_name"], disk["path"])])
             nbdkit_cmd.extend(['vm=moref=%s' % vm_hardware["metadata"]["vmware_moref"]])
             nbdkit_cmd.extend(['snapshot=%s' % self._snapshot._moId])
-            print("%s" % nbdkit_cmd)
+            print("ndbkit_cmd: %s" % nbdkit_cmd)
             nbd_server = subprocess.Popen(nbdkit_cmd, env=nbdkit_env)
 
             # Allowing some time for the socket to be created
             for i in range(10):
                 if os.path.exists(socket_path):
+                    print("breaking early, socket_path: %s" % socket_path)
                     break
                 time.sleep(1)
 
@@ -346,7 +347,6 @@ class VmAnalyzer:
 class Hardware(Resource):
     def post(self):
         input = request.get_json()
-        print("Input: %s", input)
         vm_config = VmAnalyzer(input).get_vm_config()
         return jsonify(vm_config)
     
