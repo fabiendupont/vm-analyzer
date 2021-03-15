@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vm-analyzer
+labels:
+  app: vm-analyzer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vm-analyzer
+  template:
+    metadata:
+      labels:
+        app: vm-analyzer
+      name: vm-analyzer
+    spec:
+      containers:
+        - name: vm-analyzer
+          image: 'quay.io/pmcgowan/vm-analyzer:latest'
+          ports:
+            - name: flask
+              containerPort: 5000
+          env:
+            - name: CA_TLS_CERTIFICATE
+              value: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+      initContainers:
+        - name: vddk
+          image: vddk:latest

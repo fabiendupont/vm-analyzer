@@ -346,6 +346,7 @@ class VmAnalyzer:
 class Hardware(Resource):
     def post(self):
         input = request.get_json()
+        print("Input: %s", input)
         vm_config = VmAnalyzer(input).get_vm_config()
         return jsonify(vm_config)
     
