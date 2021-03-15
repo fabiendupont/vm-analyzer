@@ -338,7 +338,7 @@ class VmAnalyzer:
         vm_hardware = self._get_vm_hardware()
         vm_config = {
             "hardware": vm_hardware,
-            # "software": self._get_vm_software(vm_hardware),
+            "software": self._get_vm_software(vm_hardware),
         }
         return vm_config
 

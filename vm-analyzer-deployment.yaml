@@ -29,6 +29,8 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: PYTHONUNBUFFERED
+              value: '1'
       initContainers:
         - name: vddk
           image: vddk:latest
