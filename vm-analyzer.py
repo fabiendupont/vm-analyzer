@@ -326,6 +326,7 @@ class VmAnalyzer:
             return operating_systems
 
         except Exception as e:
+            sys.exit()
             print("[ERROR] %s" % e)
             raise e
         finally:
@@ -333,7 +334,7 @@ class VmAnalyzer:
                 nbd_server.kill()
             for socket_path in sockets_paths:
                 os.remove(socket_path)
-            exit
+
 
 
     def get_vm_config(self):
