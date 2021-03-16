@@ -326,7 +326,7 @@ class VmAnalyzer:
             return operating_systems
 
         except Exception as e:
-            sys.exit()
+            os._exit()
             print("[ERROR] %s" % e)
             raise e
         finally:
