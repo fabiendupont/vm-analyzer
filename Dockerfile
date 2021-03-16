@@ -1,4 +1,4 @@
-FROM centos:stream
+FROM centos:8
 
 RUN mkdir /data && \
     yum -y update && \
@@ -9,6 +9,7 @@ RUN mkdir /data && \
         nbdkit \
         nbdkit-plugin-vddk \
         python3 \
+        gdb \
         python3-libguestfs &&\
     yum clean all && \
     pip3 install flask \
