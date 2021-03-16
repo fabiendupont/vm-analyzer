@@ -333,6 +333,7 @@ class VmAnalyzer:
                 nbd_server.kill()
             for socket_path in sockets_paths:
                 os.remove(socket_path)
+            exit
 
 
     def get_vm_config(self):
