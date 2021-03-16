@@ -1,16 +1,15 @@
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.3
 
 RUN mkdir /data && \
-    dnf -y update && \
+    microdnf -y update && \
     rm -rf /var/cache/yum && \
-    dnf -y install \
+    microdnf -y install \
         libguestfs \
         nbdkit \
         nbdkit-plugin-vddk \
         gdb \
         python3 \
         python3-libguestfs &&\
-    dnf clean all && \
     pip3 install flask \
         flask-restful \
         pyvmomi
