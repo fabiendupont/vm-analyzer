@@ -1,15 +1,16 @@
-FROM registry.access.redhat.com/ubi8/ubi
+FROM centos:stream8
 
 RUN mkdir /data && \
-    dnf -y update && \
+    yum -y update && \
     rm -rf /var/cache/yum && \
-    dnf -y install \
+    yum -y install epel-release && \
+    yum -y install \
         libguestfs \
         nbdkit \
         nbdkit-plugin-vddk \
-        gdb \
         python3 \
         python3-libguestfs &&\
+    yum clean all && \
     pip3 install flask \
         flask-restful \
         pyvmomi
@@ -20,3 +21,4 @@ COPY manifest.json /data/manifest.json
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 USER ${USER_UID}
+
