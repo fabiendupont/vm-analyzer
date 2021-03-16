@@ -24,4 +24,4 @@ fi
 #echo "...  OK  ..."
 #echo
 
-exec /usr/local/bin/vm-analyzer
+exec gdb python3 /usr/local/bin/vm-analyzer
