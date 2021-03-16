@@ -1,4 +1,4 @@
-FROM centos:stream8
+FROM centos:stream
 
 RUN mkdir /data && \
     yum -y update && \
