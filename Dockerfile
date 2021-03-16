@@ -1,9 +1,9 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.3
+FROM registry.access.redhat.com/ubi8/ubi
 
 RUN mkdir /data && \
-    microdnf -y update && \
+    dnf -y update && \
     rm -rf /var/cache/yum && \
-    microdnf -y install \
+    dnf -y install \
         libguestfs \
         nbdkit \
         nbdkit-plugin-vddk \
