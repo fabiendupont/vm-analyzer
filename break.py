@@ -186,17 +186,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
- 
- 
- 
- 
- 
- 
- socket_path = however you get the first arg in python
- g = guestfs.GuestFS(python_return_dict=True)
- g.set_backend("direct")
- g.add_drive_opts("", protocol="nbd", format="raw",
-                  server=["unix:%s" % socket_path], readonly=1)
- g.launch()
