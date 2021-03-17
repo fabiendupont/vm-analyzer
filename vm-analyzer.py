@@ -222,7 +222,7 @@ class VmAnalyzer:
         print("Snapshot MORef: %s" % self._snapshot._moId)
 
         nbdkit_env = os.environ.copy()
-        nbdkit_env['LD_LIBRARY_PATH'] = '/opt/vmware-vix-disklib-distrib/lib64:' # + env['LD_LIBRARY_PATH']
+        #nbdkit_env['LD_LIBRARY_PATH'] = '/opt/vmware-vix-disklib-distrib/lib64:' # + env['LD_LIBRARY_PATH']
 
         sockets_paths = []
         nbd_servers = []
@@ -236,7 +236,7 @@ class VmAnalyzer:
             nbdkit_cmd.extend(['user=%s' % self._request["authentication"]["username"]])
             nbdkit_cmd.extend(['password=%s' % self._request["authentication"]["password"]])
             nbdkit_cmd.extend(['thumbprint=%s' % self._request["authentication"]["fingerprint"]])
-            nbdkit_cmd.extend(['file=[%s] %s' % (disk["storage_name"], disk["path"])])
+            nbdkit_cmd.extend(['file="[%s] %s"' % (disk["storage_name"], disk["path"])])
             nbdkit_cmd.extend(['vm=moref=%s' % vm_hardware["metadata"]["vmware_moref"]])
             nbdkit_cmd.extend(['snapshot=%s' % self._snapshot._moId])
             print("ndbkit_cmd: %s" % nbdkit_cmd)
@@ -252,87 +252,88 @@ class VmAnalyzer:
             sockets_paths.append(socket_path)
             nbd_servers.append(nbd_server)
 
-        # try:
-        g = guestfs.GuestFS(python_return_dict=True)
-        g.set_backend("direct")
-        for socket_path in sockets_paths:
-            g.add_drive_opts("", protocol="nbd", format="raw", server=["unix:%s" % socket_path], readonly=1)
-        g.launch()
+        try:
+            g = guestfs.GuestFS(python_return_dict=True)
+            g.set_backend("direct")
+            for socket_path in sockets_paths:
+                g.add_drive_opts("", protocol="nbd", format="raw", server=["unix:%s" % socket_path], readonly=1)
+            g.launch()
 
-        roots = g.inspect_os()
-        if len(roots) == 0:
-            raise(Error("inspect_os: no operating systems found"))
+            roots = g.inspect_os()
+            if len(roots) == 0:
+                raise(Error("inspect_os: no operating systems found"))
 
-        operating_systems = []
-        for root in roots:
-            osh = {}
-            osh["filesystems"] = g.inspect_get_filesystems(root)
-            osh["mountpoints"] = g.inspect_get_mountpoints(root)
-            osh["name"] = g.inspect_get_product_name(root)
-            osh["major_version"] = g.inspect_get_major_version(root)
-            osh["minor_version"] = g.inspect_get_minor_version(root)
-            osh["type"] = g.inspect_get_type(root)
-            osh["distro"] = g.inspect_get_distro(root)
-            osh["arch"] = g.inspect_get_arch(root)
-            osh["product_variant"] = g.inspect_get_product_variant(root)
-            osh["package_format"] = g.inspect_get_package_format(root)
-            osh["package_management"] = g.inspect_get_package_management(root)
-            osh["hostname"] = g.inspect_get_hostname(root)
-            #print("%s" % osh)
+            operating_systems = []
+            for root in roots:
+                osh = {}
+                osh["filesystems"] = g.inspect_get_filesystems(root)
+                osh["mountpoints"] = g.inspect_get_mountpoints(root)
+                osh["name"] = g.inspect_get_product_name(root)
+                osh["major_version"] = g.inspect_get_major_version(root)
+                osh["minor_version"] = g.inspect_get_minor_version(root)
+                osh["type"] = g.inspect_get_type(root)
+                osh["distro"] = g.inspect_get_distro(root)
+                osh["arch"] = g.inspect_get_arch(root)
+                osh["product_variant"] = g.inspect_get_product_variant(root)
+                osh["package_format"] = g.inspect_get_package_format(root)
+                osh["package_management"] = g.inspect_get_package_management(root)
+                osh["hostname"] = g.inspect_get_hostname(root)
+                #print("%s" % osh)
 
-            for device, mp in sorted(osh["mountpoints"].items(), key=lambda k: len(k[0])):
-                try:
-                    g.mount_ro(mp, device)
-                except RuntimeError as err:
-                    raise err
+                for device, mp in sorted(osh["mountpoints"].items(), key=lambda k: len(k[0])):
+                    try:
+                        g.mount_ro(mp, device)
+                    except RuntimeError as err:
+                        raise err
 
-            osh["packages"] = g.inspect_list_applications2(root)
+                osh["packages"] = g.inspect_list_applications2(root)
 
-            with open("/data/manifest.json") as f:
-                manifest = json.load(f)
+                with open("/data/manifest.json") as f:
+                    manifest = json.load(f)
 
-            ext_ap_files = []
-            for ap_file in manifest["files"]:
-                if '*' in ap_file["path"]:
-                    #print("%s is a wildcard. Extending" % ap_file["path"])
-                    founds = g.find(os.path.dirname(self._path_win2lin(ap_file["path"])))
-                    for f in founds:
-                        if re.compile(ap_file["path"]).match(f):
-                            ext_ap_files.append({ "path": f, "collect_content": ap_file["collect_content"]})
-                else:
-                    #print("%s is NOT a wildcard. Adding" % ap_file["path"])
-                    ext_ap_files.append(ap_file)
-            #print("Extended AP Files: %s" % ext_ap_files)
+                ext_ap_files = []
+                for ap_file in manifest["files"]:
+                    if '*' in ap_file["path"]:
+                        #print("%s is a wildcard. Extending" % ap_file["path"])
+                        founds = g.find(os.path.dirname(self._path_win2lin(ap_file["path"])))
+                        for f in founds:
+                            if re.compile(ap_file["path"]).match(f):
+                                ext_ap_files.append({ "path": f, "collect_content": ap_file["collect_content"]})
+                    else:
+                        #print("%s is NOT a wildcard. Adding" % ap_file["path"])
+                        ext_ap_files.append(ap_file)
+                #print("Extended AP Files: %s" % ext_ap_files)
 
-            osh["files"] = []
-            for ap_file in ext_ap_files:
-                path = self._path_win2lin(ap_file["path"])
-                # Skip files that don't exist
-                if not g.is_file_opts(self._path_win2lin(path), followsymlinks=True):
-                    #print("%s doesn't exist. Skipping" % ap_file["path"])
-                    continue
+                osh["files"] = []
+                for ap_file in ext_ap_files:
+                    path = self._path_win2lin(ap_file["path"])
+                    # Skip files that don't exist
+                    if not g.is_file_opts(self._path_win2lin(path), followsymlinks=True):
+                        #print("%s doesn't exist. Skipping" % ap_file["path"])
+                        continue
 
-                # Collect the content of the file is requested
-                if ap_file["collect_content"]:
-                    content = "\n".join(g.read_lines(path))
-                else:
-                    content = None
+                    # Collect the content of the file is requested
+                    if ap_file["collect_content"]:
+                        content = "\n".join(g.read_lines(path))
+                    else:
+                        content = None
 
-                osh["files"].append({ "name": ap_file["path"], "content": content})
+                    osh["files"].append({ "name": ap_file["path"], "content": content})
 
-            g.umount_all()
-            operating_systems.append(osh)
+                g.umount_all()
+                operating_systems.append(osh)
 
-        return operating_systems
+            return operating_systems
 
-        # except Exception as e:
-        #     print("[ERROR] %s" % e)
-        #     raise e
-        # finally:
-        #     for nbd_server in nbd_servers:
-        #         nbd_server.kill()
-        #     for socket_path in sockets_paths:
-        #         os.remove(socket_path)
+        except Exception as e:
+            os._exit()
+            print("[ERROR] %s" % e)
+            raise e
+        finally:
+            for nbd_server in nbd_servers:
+                nbd_server.kill()
+            for socket_path in sockets_paths:
+                os.remove(socket_path)
 
 
 
