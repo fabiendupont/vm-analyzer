@@ -152,6 +152,7 @@ class VmAnalyzer:
             # Allowing some time for the socket to be created
             for i in range(10):
                 if os.path.exists(socket_path):
+                    print("breaking early, socket_path: %s" % socket_path)
                     break
                 time.sleep(1)
 
