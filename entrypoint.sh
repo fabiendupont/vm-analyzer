@@ -24,4 +24,4 @@ fi
 #echo "...  OK  ..."
 #echo
 
-exec gdb -ex 't a a bt' -P /usr/local/bin/vm-analyzer
+exec /usr/local/bin/vm-analyzer
