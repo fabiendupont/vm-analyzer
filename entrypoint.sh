@@ -24,4 +24,4 @@ fi
 #echo "...  OK  ..."
 #echo
 
-exec  nbdkit -U - memory 1G --run 'python3 /usr/local/bin/break "$unixsocket"'
+exec  nbdkit -U - memory 1G --readonly --exit-with-parent --newstyle --run 'python3 /usr/local/bin/break "$unixsocket"' 
