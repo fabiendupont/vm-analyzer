@@ -24,4 +24,4 @@ fi
 #echo "...  OK  ..."
 #echo
 
-exec /usr/local/bin/vm-analyzer
+exec  nbdkit -U - memory 1G --run 'python3 /usr/local/bin/break'
