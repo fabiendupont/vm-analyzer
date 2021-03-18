@@ -146,7 +146,7 @@ class VmAnalyzer:
         for disk in vm_hardware["disks"]:
             socket_path = "/tmp/%s/%s.sock" % (self._request["vm_uuid"], disk["id"])
             nbdkit_env = { 'LD_LIBRARY_PATH': '/opt/vmware-vix-disklib-distrib/lib64' }
-            nbdkit_cmd = ['/usr/sbin/nbdkit', '--readonly', '--exit-with-parent', '--newstyle']
+            nbdkit_cmd = ['/usr/sbin/nbdkit', '--exit-with-parent', '--newstyle']
             nbdkit_cmd.extend(['--unix', socket_path])
             nbdkit_cmd.extend(['vddk', 'libdir=/opt/vmware-vix-disklib-distrib'])
             nbdkit_cmd.extend(['server=%s' % self._request["authentication"]["hostname"]])
