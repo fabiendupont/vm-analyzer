@@ -110,6 +110,9 @@ class VmAnalyzer:
         host = self._vm.runtime.host
 
         hardware = {
+            "metadata": {
+                "vmware_moref": self._vm._moId
+            },
             "disks": [],
         }
 
