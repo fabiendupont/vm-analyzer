@@ -26,4 +26,6 @@ fi
 
 #exec  nbdkit -U - memory 1G --readonly --exit-with-parent --newstyle --run 'python3 /usr/local/bin/break "$unixsocket"'
 #exec /usr/local/bin/vm-analyzer
+ulimit -c unlimited
+echo '/var/tmp/core.%p' > /proc/sys/kernel/core_pattern
 exec /usr/local/bin/break
