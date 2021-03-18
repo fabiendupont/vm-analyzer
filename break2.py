@@ -146,7 +146,7 @@ class VmAnalyzer:
         for disk in vm_hardware["disks"]:
             socket_path = "/tmp/%s/%s.sock" % (self._request["vm_uuid"], disk["id"])
             nbdkit_env = { 'LD_LIBRARY_PATH': '/opt/vmware-vix-disklib-distrib/lib64' }
-            nbdkit_cmd = ['/usr/sbin/nbdkit', '--exit-with-parent', '--newstyle']
+            nbdkit_cmd = ['/usr/sbin/nbdkit', --readonly', '--exit-with-parent', '--newstyle']
             nbdkit_cmd.extend(['--unix', socket_path])
             nbdkit_cmd.extend(['vddk', 'libdir=/opt/vmware-vix-disklib-distrib'])
             nbdkit_cmd.extend(['server=%s' % self._request["authentication"]["hostname"]])
@@ -172,7 +172,7 @@ class VmAnalyzer:
         g = guestfs.GuestFS(python_return_dict=True)
         g.set_backend("direct")
         for socket_path in sockets_paths:
-            g.add_drive_opts("", protocol="nbd", format="raw", server=["unix:%s" % socket_path], readonly=1)
+            g.add_drive_opts("", protocol="nbd", format="raw", server=["unix:%s" % socket_path], readonly=0)
         g.launch()
 
     def get_vm_config(self):
