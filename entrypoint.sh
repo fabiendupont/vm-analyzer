@@ -27,4 +27,5 @@ fi
 #exec  nbdkit -U - memory 1G --readonly --exit-with-parent --newstyle --run 'python3 /usr/local/bin/break "$unixsocket"'
 #exec /usr/local/bin/vm-analyzer
 
-exec /usr/local/bin/break
+#exec /usr/local/bin/break
+/usr/local/bin/break
