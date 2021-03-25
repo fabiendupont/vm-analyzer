@@ -16,8 +16,8 @@ RUN mkdir /data && \
         flask-restful \
         pyvmomi
 
-#COPY vm-analyzer.py /usr/local/bin/vm-analyzer
-COPY break2.py /usr/local/bin/break
+COPY vm-analyzer.py /usr/local/bin/vm-analyzer
+#COPY break2.py /usr/local/bin/break
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY manifest.json /data/manifest.json
 
