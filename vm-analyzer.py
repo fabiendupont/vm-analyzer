@@ -12,6 +12,7 @@ import ssl
 import sys
 import time
 import uuid
+import threading
 
 from pyVmomi import vim
 from pyVim.connect import SmartStubAdapter, VimSessionOrientedStub, Disconnect
@@ -346,11 +347,15 @@ class VmAnalyzer:
         return vm_config
 
 
-class Hardware(Resource):
+class Scanning(Resource):
     def post(self):
         input = request.get_json()
+        scan = threading.Thread(target=scan, args=(input))
+        scan.start()
+
+    def scan(input):
         vm_config = VmAnalyzer(input).get_vm_config()
-        return jsonify(vm_config)
+        print(jsonify(vm_config))
     
 
 class Debug(Resource):
@@ -361,7 +366,7 @@ class Debug(Resource):
 def main():     
     app = Flask(__name__)
     api = Api(app)
-    api.add_resource(Hardware, '/hardware')
+    api.add_resource(Scanning, '/scan')
     api.add_resource(Debug, '/debug')
     app.run(host= '0.0.0.0')
     
