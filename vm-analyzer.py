@@ -278,47 +278,47 @@ class VmAnalyzer:
                 osh["package_format"] = g.inspect_get_package_format(root)
                 osh["package_management"] = g.inspect_get_package_management(root)
                 osh["hostname"] = g.inspect_get_hostname(root)
-                #print("%s" % osh)
+                print("%s" % osh)
 
-                for device, mp in sorted(osh["mountpoints"].items(), key=lambda k: len(k[0])):
-                    try:
-                        g.mount_ro(mp, device)
-                    except RuntimeError as err:
-                        raise err
+                # for device, mp in sorted(osh["mountpoints"].items(), key=lambda k: len(k[0])):
+                #     try:
+                #         g.mount_ro(mp, device)
+                #     except RuntimeError as err:
+                #         raise err
 
-                osh["packages"] = g.inspect_list_applications2(root)
+                #osh["packages"] = g.inspect_list_applications2(root)
 
-                with open("/data/manifest.json") as f:
-                    manifest = json.load(f)
-
-                ext_ap_files = []
-                for ap_file in manifest["files"]:
-                    if '*' in ap_file["path"]:
-                        #print("%s is a wildcard. Extending" % ap_file["path"])
-                        founds = g.find(os.path.dirname(self._path_win2lin(ap_file["path"])))
-                        for f in founds:
-                            if re.compile(ap_file["path"]).match(f):
-                                ext_ap_files.append({ "path": f, "collect_content": ap_file["collect_content"]})
-                    else:
-                        #print("%s is NOT a wildcard. Adding" % ap_file["path"])
-                        ext_ap_files.append(ap_file)
-                #print("Extended AP Files: %s" % ext_ap_files)
-
-                osh["files"] = []
-                for ap_file in ext_ap_files:
-                    path = self._path_win2lin(ap_file["path"])
-                    # Skip files that don't exist
-                    if not g.is_file_opts(self._path_win2lin(path), followsymlinks=True):
-                        #print("%s doesn't exist. Skipping" % ap_file["path"])
-                        continue
-
-                    # Collect the content of the file is requested
-                    if ap_file["collect_content"]:
-                        content = "\n".join(g.read_lines(path))
-                    else:
-                        content = None
-
-                    osh["files"].append({ "name": ap_file["path"], "content": content})
+                # with open("/data/manifest.json") as f:
+                #     manifest = json.load(f)
+                # 
+                # ext_ap_files = []
+                # for ap_file in manifest["files"]:
+                #     if '*' in ap_file["path"]:
+                #         #print("%s is a wildcard. Extending" % ap_file["path"])
+                #         founds = g.find(os.path.dirname(self._path_win2lin(ap_file["path"])))
+                #         for f in founds:
+                #             if re.compile(ap_file["path"]).match(f):
+                #                 ext_ap_files.append({ "path": f, "collect_content": ap_file["collect_content"]})
+                #     else:
+                #         #print("%s is NOT a wildcard. Adding" % ap_file["path"])
+                #         ext_ap_files.append(ap_file)
+                # #print("Extended AP Files: %s" % ext_ap_files)
+                # 
+                # osh["files"] = []
+                # for ap_file in ext_ap_files:
+                #     path = self._path_win2lin(ap_file["path"])
+                #     # Skip files that don't exist
+                #     if not g.is_file_opts(self._path_win2lin(path), followsymlinks=True):
+                #         #print("%s doesn't exist. Skipping" % ap_file["path"])
+                #         continue
+                # 
+                #     # Collect the content of the file is requested
+                #     if ap_file["collect_content"]:
+                #         content = "\n".join(g.read_lines(path))
+                #     else:
+                #         content = None
+                # 
+                #     osh["files"].append({ "name": ap_file["path"], "content": content})
 
                 g.umount_all()
                 operating_systems.append(osh)
