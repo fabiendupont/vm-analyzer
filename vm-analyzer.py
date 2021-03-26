@@ -349,7 +349,7 @@ class VmAnalyzer:
 class Scanning(Resource):
     def post(self):
         input = request.get_json()
-        scanner = threading.Thread(target=self.scan, args=(input))
+        scanner = threading.Thread(target=self.scan, args=(input,))
         scanner.start()
 
     def scan(input):
