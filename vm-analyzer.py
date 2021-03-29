@@ -115,11 +115,11 @@ class VmAnalyzer:
         # For successful API call, response code will be 200 (OK)
         if(api_response.ok):
             json_data = json.loads(api_response.content)
-        
-            print("The response contains {0} properties".format(len(json_data)))
-            print("\n")
-            for key in json_data:
-                print(key + " : " + json_data[key])
+            print("JSON return: %s" % json_data)
+            # print("The response contains {0} properties".format(len(json_data)))
+            # print("\n")
+            # for key in json_data:
+            #     print(key + " : " + json_data[key])
 
     def _find_vm_by_id(self, vm_id):
         print("Looking for virtual machine with UUID '%s'" % vm_id)
