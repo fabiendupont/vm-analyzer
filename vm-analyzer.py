@@ -46,6 +46,7 @@ MANIFEST = {
 class ConcurrentScan(threading.Thread):
   
     def __init__(self, post_body):
+        Thread.__init__(self)
         self._request = post_body
         print("Initializing ConcurrentScan")
   
