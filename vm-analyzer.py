@@ -185,7 +185,7 @@ class VmAnalyzer:
             nbdkit_cmd.extend(['password=%s' % self._request["authentication"]["password"]])
             nbdkit_cmd.extend(['thumbprint=%s' % self._request["authentication"]["fingerprint"]])
             nbdkit_cmd.extend(['file=[%s] %s' % (disk["storage_name"], disk["path"])])
-            nbdkit_cmd.extend(['vm=moref=%s' % disk["metadata"]["vmware_moref"]])
+            nbdkit_cmd.extend(['vm=moref=%s' % vm_disks["metadata"]["vmware_moref"]])
             nbdkit_cmd.extend(['snapshot=%s' % self._snapshot._moId])
             print("ndbkit_cmd: %s" % nbdkit_cmd)
             nbd_server = subprocess.Popen(nbdkit_cmd, env=nbdkit_env)
