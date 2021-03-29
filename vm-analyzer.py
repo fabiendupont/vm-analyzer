@@ -60,7 +60,7 @@ class ConcurrentScan(threading.Thread):
 class VmAnalyzer:
     def __init__(self, post_body):
         self._request = post_body
-        print("Initializing VmAnalyzer")
+        print("Initializing VmAnalyzer at %s" % now.strftime("%Y-%m-%d %H:%M:%S"))
         self._inventory_db = self._get_inventory_db()
         self._service_instance = self._connect()
         self._vm = self._find_vm_by_id(self._request["vm_uuid"])
@@ -76,6 +76,7 @@ class VmAnalyzer:
     def __del__(self):
         self._remove_snapshot()
         self._disconnect()
+        print("Terminating VmAnalyzer at %s" % now.strftime("%Y-%m-%d %H:%M:%S"))
 
     def _connect(self):
         # https://github.com/vmware/pyvmomi/issues/347#issuecomment-297591340
@@ -111,10 +112,14 @@ class VmAnalyzer:
         inventory_socket   = inventory_hostname + ":" + os.environ["FORKLIFT_INVENTORY_SERVICE_PORT"]
         providers_url      = "https://" + inventory_socket + "/providers/vsphere"
         api_response       = requests.get(providers_url, verify=os.environ["CA_TLS_CERTIFICATE"])
-        print (api_response)
-
         # For successful API call, response code will be 200 (OK)
-        #if(api_response.ok):
+        if(api_response.ok):
+            json_data = json.loads(api_response.content)
+        
+            print("The response contains {0} properties".format(len(json_data)))
+            print("\n")
+            for key in json_data:
+                print(key + " : " + json_data[key])
 
     def _find_vm_by_id(self, vm_id):
         print("Looking for virtual machine with UUID '%s'" % vm_id)
