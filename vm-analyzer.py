@@ -47,6 +47,7 @@ class ConcurrentScan(threading.Thread):
   
     def __init__(self, post_body):
         self._request = post_body
+        print("Initializing ConcurrentScan")
   
     def run(self):
         VmAnalyzer(self._request).get_vm_config()
@@ -54,6 +55,7 @@ class ConcurrentScan(threading.Thread):
 class VmAnalyzer:
     def __init__(self, post_body):
         self._request = post_body
+        print("Initializing VmAnalyzer")
         self._service_instance = self._connect()
         self._vm = self._find_vm_by_id(self._request["vm_uuid"])
 
