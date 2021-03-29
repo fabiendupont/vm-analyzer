@@ -293,7 +293,8 @@ class VmAnalyzer:
 class Scanning(Resource):
     def post(self):
         post_body = request.get_json()      
-        ConcurrentScan(post_body)  
+        scan = ConcurrentScan(post_body)
+        scan.start()
 
 class Debug(Resource):
     def get(self): 
