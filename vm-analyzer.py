@@ -59,13 +59,12 @@ class ConcurrentScan(threading.Thread):
 
 class VmAnalyzer:
     def __init__(self, post_body):
+        now = datetime.datetime.now()
         self._request = post_body
         print("Initializing VmAnalyzer at %s" % now.strftime("%Y-%m-%d %H:%M:%S"))
         self._inventory_db = self._get_inventory_db()
         self._service_instance = self._connect()
         self._vm = self._find_vm_by_id(self._request["vm_uuid"])
-
-        now = datetime.datetime.now()
         self._snapshot_name = "%s-vm-analysis" % now.strftime("%Y%m%d%H%M%S")
         self._snapshot_desc = "%s - VM Analysis" % now.strftime("%Y-%m-%d %H:%M:%S")
         self._snapshot = None
@@ -74,6 +73,7 @@ class VmAnalyzer:
             os.mkdir("/tmp/%s" % self._request["vm_uuid"])
 
     def __del__(self):
+        now = datetime.datetime.now()
         self._remove_snapshot()
         self._disconnect()
         print("Terminating VmAnalyzer at %s" % now.strftime("%Y-%m-%d %H:%M:%S"))
