@@ -43,10 +43,17 @@ MANIFEST = {
     ]
 }
 
+class ConcurrentScan(threading.Thread):
+  
+    def __init__(self, post_body):
+        self._request = post_body
+  
+    def run(self):
+        VmAnalyzer(self._request).get_vm_config()
 
 class VmAnalyzer:
-    def __init__(self, request):
-        self._request = request
+    def __init__(self, post_body):
+        self._request = post_body
         self._service_instance = self._connect()
         self._vm = self._find_vm_by_id(self._request["vm_uuid"])
 
@@ -58,11 +65,9 @@ class VmAnalyzer:
         if not os.path.exists("/tmp/%s" % self._request["vm_uuid"]):
             os.mkdir("/tmp/%s" % self._request["vm_uuid"])
 
-
     def __del__(self):
         self._remove_snapshot()
         self._disconnect()
-
 
     def _connect(self):
         # https://github.com/vmware/pyvmomi/issues/347#issuecomment-297591340
@@ -87,13 +92,11 @@ class VmAnalyzer:
 
         return si
 
-
     def _disconnect(self):
         try:
             Disconnect(self._service_instance)
         except:
             pass
-
 
     def _find_vm_by_id(self, vm_id):
         print("Looking for virtual machine with UUID '%s'" % vm_id)
@@ -109,7 +112,6 @@ class VmAnalyzer:
             raise Exception("No virtual machine with UUID '%s'" % vm_id)
         return vm
 
-
     def _create_snapshot(self):
         print("Creating snapshot to protect the VM disks")
         task = self._vm.CreateSnapshot(name = self._snapshot_name,
@@ -124,34 +126,24 @@ class VmAnalyzer:
         self._vm.Reload()
         self._snapshot = self._vm.snapshot.currentSnapshot
 
-
     def _remove_snapshot(self):
         print("Removing snapshot")
         if self._snapshot:
             WaitForTask(self._snapshot.RemoveSnapshot_Task(False))
-
 
     def _path_win2lin(self, path):
         if not re.compile('^/').match(path):
             path = re.sub('^.*/', '/', path)
         return path
 
-
-    def _get_vm_hardware(self):
+    def _get_vm_disks(self):
         host = self._vm.runtime.host
 
         hardware = {
             "metadata": {
                 "vmware_moref": self._vm._moId
             },
-            "cpu": {
-                "total_cores": self._vm.config.hardware.numCPU,
-                "cores_per_socket": self._vm.config.hardware.numCoresPerSocket
-            },
-            "memory": self._vm.config.hardware.memoryMB * 2**20,
-            "power_state": self._vm.runtime.powerState,
             "disks": [],
-            "nics": []
         }
 
         for device in self._vm.config.hardware.device:
@@ -168,57 +160,9 @@ class VmAnalyzer:
                     "is_sparse": device.backing.thinProvisioned,
                     "is_rdm": type(device.backing).__name__ == 'vim.vm.device.VirtualDisk.VirtualDiskRawDiskMappingVer1BackingInfo'
                 })
-
-            # https://github.com/vmware/pyvmomi-community-samples/blob/master/samples/getvnicinfo.py
-            if type(device.backing).__name__ == 'vim.vm.device.VirtualEthernetCard.NetworkBackingInfo':
-                vSwitch = None
-                if hasattr(device.backing, 'port'):
-                    dvsUuid = device.backing.port.switchUuid
-                    try:
-                        dvs = content.dvSwitchManager.QueryDvsByUuid(dvsUuid)
-                        # TODO: VALIDATE WITH AN ACTUAL DVS
-                        network_name = str(dvs.name)
-                    except:
-                        raise Exception("DVS with UUID '%s' not found" % dvsUuid)
-                else:
-                    vm_portgroup = device.backing.network.name
-                    host_portgroups = host.config.network.portgroup
-                    for host_portgroup in host_portgroups:
-                        if vm_portgroup in host_portgroup.key:
-                            network_name = str(host_portgroup.spec.name)
-
-                nic = {
-                    "device_name": device.deviceInfo.label,
-                    "mac_address": device.macAddress,
-                    "adapter_type": type(device).__name__.split('.')[-1],
-                    "lan_name": network_name,
-                    "hostname": self._vm.guest.hostName,
-                    "ipaddresses": [],
-                }
-
-                if len(self._vm.guest.net) != 0:
-                    dns_config = {
-                        "domain_name": [],
-                        "dns_servers": [],
-                        "search_domains": []
-                    }
-
-                for net in self._vm.guest.net:
-                    if device.macAddress != net.macAddress:
-                        continue
-                    for ipcfg in net.ipConfig.ipAddress:
-                        ip = {
-                            "ipaddress": ipcfg.ipAddress,
-                            "prefix": ipcfg.prefixLength,
-                        }
-                        nic["ipaddresses"].append(ip)
-
-                hardware["nics"].append(nic)
-
         return hardware
 
-
-    def _get_vm_software(self, vm_hardware):
+    def _get_vm_software(self, vm_disks):
         self._create_snapshot()
         print("Snapshot MORef: %s" % self._snapshot._moId)
 
@@ -227,7 +171,7 @@ class VmAnalyzer:
 
         sockets_paths = []
         nbd_servers = []
-        for disk in vm_hardware["disks"]:
+        for disk in vm_disks["disks"]:
             socket_path = "/tmp/%s/%s.sock" % (self._request["vm_uuid"], disk["id"])
             nbdkit_env = { 'LD_LIBRARY_PATH': '/opt/vmware-vix-disklib-distrib/lib64' }
             nbdkit_cmd = ['/usr/sbin/nbdkit', '--readonly', '--exit-with-parent', '--newstyle']
@@ -336,31 +280,22 @@ class VmAnalyzer:
             for socket_path in sockets_paths:
                 os.remove(socket_path)
 
-
-
     def get_vm_config(self):
-        vm_hardware = self._get_vm_hardware()
+        vm_disks = self._get_vm_disks()
         vm_config = {
-            "hardware": vm_hardware,
-            "software": self._get_vm_software(vm_hardware),
+            "disks": vm_disks,
+            "software": self._get_vm_software(vm_disks),
         }
         return vm_config
 
 class Scanning(Resource):
     def post(self):
-        input = request.get_json()
-        scanner = threading.Thread(target=self.scan, args=(input,))
-        scanner.start()
-
-    def scan(input):
-        vm_config = VmAnalyzer(input).get_vm_config()
-        print(jsonify(vm_config))
-    
+        post_body = request.get_json()      
+        ConcurrentScan(post_body)  
 
 class Debug(Resource):
     def get(self): 
         return "<h1>Debug</h1><p>Working</p>"
-
 
 def main():     
     app = Flask(__name__)
