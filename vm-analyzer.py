@@ -51,7 +51,8 @@ class ConcurrentScan(threading.Thread):
         print("Initializing ConcurrentScan")
   
     def run(self):
-        VmAnalyzer(self._request).get_vm_config()
+        vm_config = VmAnalyzer(self._request).get_vm_config()
+        print("VM Config: %s" % vm_config)
 
 class VmAnalyzer:
     def __init__(self, post_body):
@@ -141,7 +142,7 @@ class VmAnalyzer:
 
     def _get_vm_disks(self):
         host = self._vm.runtime.host
-
+        print("Getting VM disk details")
         hardware = {
             "metadata": {
                 "vmware_moref": self._vm._moId
@@ -226,7 +227,6 @@ class VmAnalyzer:
                 osh["package_format"] = g.inspect_get_package_format(root)
                 osh["package_management"] = g.inspect_get_package_management(root)
                 osh["hostname"] = g.inspect_get_hostname(root)
-                print("%s" % osh)
 
                 # for device, mp in sorted(osh["mountpoints"].items(), key=lambda k: len(k[0])):
                 #     try:
@@ -296,6 +296,7 @@ class Scanning(Resource):
         post_body = request.get_json()      
         scan = ConcurrentScan(post_body)
         scan.start()
+        return "Scan started"
 
 class Debug(Resource):
     def get(self): 
