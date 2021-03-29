@@ -13,6 +13,9 @@ import sys
 import time
 import uuid
 import threading
+import requests
+
+from requests.auth import HTTPDigestAuth
 
 from pyVmomi import vim
 from pyVim.connect import SmartStubAdapter, VimSessionOrientedStub, Disconnect
@@ -58,6 +61,7 @@ class VmAnalyzer:
     def __init__(self, post_body):
         self._request = post_body
         print("Initializing VmAnalyzer")
+        self._inventory_db = self._get_inventory_db()
         self._service_instance = self._connect()
         self._vm = self._find_vm_by_id(self._request["vm_uuid"])
 
@@ -101,6 +105,16 @@ class VmAnalyzer:
             Disconnect(self._service_instance)
         except:
             pass
+          
+    def _get_inventory_db(self):
+        inventory_hostname = os.environ["INVENTORY_SERVICE"] + "." + os.environ["POD_NAMESPACE"] + ".svc.cluster.local"
+        inventory_socket   = inventory_hostname + ":" + os.environ["FORKLIFT_INVENTORY_SERVICE_PORT"]
+        providers_url      = "https://" + inventory_socket + "/providers/vsphere"
+        api_response       = requests.get(providers_url, verify=os.environ["CA_TLS_CERTIFICATE"])
+        print (api_response)
+
+        # For successful API call, response code will be 200 (OK)
+        #if(api_response.ok):
 
     def _find_vm_by_id(self, vm_id):
         print("Looking for virtual machine with UUID '%s'" % vm_id)
@@ -194,7 +208,7 @@ class VmAnalyzer:
             # Allowing some time for the socket to be created
             for i in range(10):
                 if os.path.exists(socket_path):
-                    print("breaking early, socket_path: %s" % socket_path)
+                    print("Socket_path: %s" % socket_path)
                     break
                 time.sleep(1)
 
@@ -270,7 +284,6 @@ class VmAnalyzer:
 
                 g.umount_all()
                 operating_systems.append(osh)
-
             return operating_systems
 
         except Exception as e:

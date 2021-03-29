@@ -31,6 +31,14 @@ spec:
                   fieldPath: metadata.namespace
             - name: PYTHONUNBUFFERED
               value: '1'
+            - name: LIBGUESTFS_TRACE
+              value: '0'
+            - name: LIBGUESTFS_DEBUG
+              value: '0'
+            - name: LD_PRELOAD
+              value: '/lib64/libSegFault.so'
+            - name: INVENTORY_SERVICE
+              value: 'forklift-inventory'
           volumeMounts:
             - name: vddk-vol-mount
               mountPath: /opt
