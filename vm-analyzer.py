@@ -64,7 +64,7 @@ class VmAnalyzer:
         print("Initializing VmAnalyzer at %s" % now.strftime("%Y-%m-%d %H:%M:%S"))
         self._inventory_db = self._get_inventory_db()
         self._service_instance = self._connect()
-        self._vm = self._find_vm_by_id(self._request["vm_uuid"])
+        self._vm_uuid = self._get_vm_uuid()
         self._snapshot_name = "%s-vm-analysis" % now.strftime("%Y%m%d%H%M%S")
         self._snapshot_desc = "%s - VM Analysis" % now.strftime("%Y-%m-%d %H:%M:%S")
         self._snapshot = None
@@ -80,9 +80,10 @@ class VmAnalyzer:
 
     def _connect(self):
         # https://github.com/vmware/pyvmomi/issues/347#issuecomment-297591340
-        print("Connecting to %s as %s" % (self._request["authentication"]["hostname"], self._request["authentication"]["username"]))
+        vm_host = self._get_vm_host()
+        print("Connecting to %s as %s" % (vm_host, self._request["host_authentication"]["username"]))
         smart_stub = SmartStubAdapter(
-            host = self._request["authentication"]["hostname"],
+            host = vm_host,
             port = 443,
             sslContext = ssl._create_unverified_context(),
             connectionPoolTimeout = 0
@@ -90,14 +91,14 @@ class VmAnalyzer:
         session_stub = VimSessionOrientedStub(
             smart_stub,
             VimSessionOrientedStub.makeUserLoginMethod(
-                self._request["authentication"]["username"],
-                self._request["authentication"]["password"]
+                self._request["host_authentication"]["username"],
+                self._request["host_authentication"]["password"]
             )
         )
         si = vim.ServiceInstance('ServiceInstance', session_stub)
 
         if not si:
-            raise Exception("Could not connect to %s" % self._request["authentication"]["hostname"])
+            raise Exception("Could not connect to %s" % vm_host)
 
         return si
 
@@ -110,16 +111,26 @@ class VmAnalyzer:
     def _get_inventory_db(self):
         inventory_hostname = os.environ["INVENTORY_SERVICE"] + "." + os.environ["POD_NAMESPACE"] + ".svc.cluster.local"
         inventory_socket   = inventory_hostname + ":" + os.environ["FORKLIFT_INVENTORY_SERVICE_PORT"]
-        providers_url      = "https://" + inventory_socket + "/providers/vsphere"
-        api_response       = requests.get(providers_url, verify=os.environ["CA_TLS_CERTIFICATE"])
-        # For successful API call, response code will be 200 (OK)
+        inventory_db       = "https://" + inventory_socket + "/providers/vsphere/" + self._request["provider"]["uid"]
+        return inventory_db
+      
+    def _call_inventory_db(self, href_slug):
+        api_response = requests.get(self._inventory_db + href_slug, verify=os.environ["CA_TLS_CERTIFICATE"])
         if(api_response.ok):
-            json_data = json.loads(api_response.content)
-            print("JSON return: %s" % json_data)
-            # print("The response contains {0} properties".format(len(json_data)))
-            # print("\n")
-            # for key in json_data:
-            #     print(key + " : " + json_data[key])
+            return json.loads(api_response.content)
+        else:
+            raise Exception("Failed call to inventory database, return code: %s" % api_response)
+
+    def _get_vm_uuid(self):
+        print("Looking for UUID for virtual machine with MORef: %s" % self._request["provider"]["vm_moref"])
+        href_slug = "/vms/" + self._request["provider"]["vm_moref"]
+        return self._call_inventory_db(href_slug)["uuid"]
+      
+    def _get_vm_host(self):
+        print("Looking for host for virtual machine with MORef: %s" % self._request["provider"]["vm_moref"])
+        vm_href_slug = "/vms/" + self._request["provider"]["vm_moref"]
+        host_href_slug = "/hosts/" + self._call_inventory_db(vm_href_slug)["host"]["id"]
+        return self._call_inventory_db(host_href_slug)["name"]
 
     def _find_vm_by_id(self, vm_id):
         print("Looking for virtual machine with UUID '%s'" % vm_id)
@@ -162,28 +173,24 @@ class VmAnalyzer:
     def _get_vm_disks(self):
         host = self._vm.runtime.host
         print("Getting VM disk details")
-        hardware = {
-            "metadata": {
-                "vmware_moref": self._vm._moId
-            },
-            "disks": [],
-        }
+        href_slug = "/vms/" + self._request["provider"]["vm_moref"]
+        return self._call_inventory_db(href_slug)["disks"]
 
-        for device in self._vm.config.hardware.device:
-            if type(device).__name__ == 'vim.vm.device.VirtualDisk':
-                datastore = device.backing.datastore
-                path = device.backing.fileName.replace("[%s] " % datastore.name, "")
-                hardware["disks"].append({
-                    "id": device.backing.uuid,
-                    "key": device.key,
-                    "path": path,
-                    "size": device.capacityInBytes,
-                    "storage_name": datastore.name,
-                    "storage_path": datastore.summary.url.replace("ds://", ""),
-                    "is_sparse": device.backing.thinProvisioned,
-                    "is_rdm": type(device.backing).__name__ == 'vim.vm.device.VirtualDisk.VirtualDiskRawDiskMappingVer1BackingInfo'
-                })
-        return hardware
+        # for device in self._vm.config.hardware.device:
+        #     if type(device).__name__ == 'vim.vm.device.VirtualDisk':
+        #         datastore = device.backing.datastore
+        #         path = device.backing.fileName.replace("[%s] " % datastore.name, "")
+        #         hardware["disks"].append({
+        #             "id": device.backing.uuid,
+        #             "key": device.key,
+        #             "path": path,
+        #             "size": device.capacityInBytes,
+        #             "storage_name": datastore.name,
+        #             "storage_path": datastore.summary.url.replace("ds://", ""),
+        #             "is_sparse": device.backing.thinProvisioned,
+        #             "is_rdm": type(device.backing).__name__ == 'vim.vm.device.VirtualDisk.VirtualDiskRawDiskMappingVer1BackingInfo'
+        #         })
+        # return hardware
 
     def _get_vm_software(self, vm_disks):
         self._create_snapshot()
@@ -304,7 +311,7 @@ class VmAnalyzer:
     def get_vm_config(self):
         vm_disks = self._get_vm_disks()
         vm_config = {
-            "disks": vm_disks,
+            "hardware": vm_disks,
             "software": self._get_vm_software(vm_disks),
         }
         return vm_config
@@ -314,7 +321,7 @@ class Scanning(Resource):
         post_body = request.get_json()      
         scan = ConcurrentScan(post_body)
         scan.start()
-        return "Scan started"
+        return "Scan started for VM UUID: " + post_body["vm_uuid"]
 
 class Debug(Resource):
     def get(self): 
