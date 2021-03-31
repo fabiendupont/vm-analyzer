@@ -136,8 +136,7 @@ class VmAnalyzer:
     def _find_vm_by_uuid(self):
         print("Looking for virtual machine with UUID '%s'" % self._vm_uuid)
         # TODO: understand why FindByUuid fails
-        search_index = self._service_instance.content.searchIndex
-        vm = search_index.FindByUuid(None, self._vm_uuid, True, True)
+        vm = self._service_instance.content.searchIndex.FindByUuid(uuid=self._vm_uuid, vmSearch=True, instanceUuid=False)
         # view_manager = self._service_instance.content.viewManager
         # container = view_manager.CreateContainerView(self._service_instance.content.rootFolder, [vim.VirtualMachine], True)
         # for c in container.view:
