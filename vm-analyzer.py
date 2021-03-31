@@ -82,9 +82,9 @@ class VmAnalyzer:
 
     def _connect(self):
         # https://github.com/vmware/pyvmomi/issues/347#issuecomment-297591340
-        print("Connecting to %s as %s" % (self._vm_host, self._request["host_authentication"]["username"]))
+        print("Connecting to %s as %s" % (self._vm_host["name"], self._request["host_authentication"]["username"]))
         smart_stub = SmartStubAdapter(
-            host = self._vm_host,
+            host = self._vm_host["name"],
             port = 443,
             sslContext = ssl._create_unverified_context(),
             connectionPoolTimeout = 0
@@ -99,7 +99,7 @@ class VmAnalyzer:
         si = vim.ServiceInstance('ServiceInstance', self._session_stub)
 
         if not si:
-            raise Exception("Could not connect to %s" % self._vm_host)
+            raise Exception("Could not connect to %s" % self._vm_host["name"])
 
         return si
 
@@ -131,7 +131,7 @@ class VmAnalyzer:
         print("Looking for host for virtual machine with MORef: %s" % self._request["vm"]["moref"])
         vm_href_slug = "/vms/" + self._request["vm"]["moref"]
         host_href_slug = "/hosts/" + self._call_inventory_db(vm_href_slug)["host"]["id"]
-        return self._call_inventory_db(host_href_slug)["name"]
+        return self._call_inventory_db(host_href_slug)
 
     def _find_vm_by_uuid(self):
         print("Looking for virtual machine with UUID '%s'" % self._vm_uuid)
@@ -207,10 +207,10 @@ class VmAnalyzer:
             nbdkit_cmd = ['/usr/sbin/nbdkit', '--readonly', '--exit-with-parent', '--newstyle']
             nbdkit_cmd.extend(['--unix', socket_path])
             nbdkit_cmd.extend(['vddk', 'libdir=/opt/vmware-vix-disklib-distrib'])
-            nbdkit_cmd.extend(['server=%s' % self._vm_host])
+            nbdkit_cmd.extend(['server=%s' % self._vm_host["name"]])
             nbdkit_cmd.extend(['user=%s' % self._request["host_authentication"]["username"]])
             nbdkit_cmd.extend(['password=%s' % self._request["host_authentication"]["password"]])
-            nbdkit_cmd.extend(['thumbprint=%s' % self._request["host_authentication"]["fingerprint"]])
+            nbdkit_cmd.extend(['thumbprint=%s' % self._vm_host["thumbprint"]])
             nbdkit_cmd.extend(['file=%s' % disk["file"]])
             nbdkit_cmd.extend(['vm=moref=%s' % self._vm._moId])
             nbdkit_cmd.extend(['snapshot=%s' % self._snapshot._moId])
