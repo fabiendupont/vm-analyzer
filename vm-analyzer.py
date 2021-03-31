@@ -64,9 +64,9 @@ class VmAnalyzer:
         print("Initializing VmAnalyzer at %s" % now.strftime("%Y-%m-%d %H:%M:%S"))
         self._inventory_db = self._get_inventory_db()
         self._vm_uuid = self._get_vm_uuid()
-        self._vm = self._find_vm_by_uuid()
         self._vm_host = self._get_vm_host()
         self._service_instance = self._connect()
+        self._vm = self._find_vm_by_uuid()
         self._snapshot_name = "%s-vm-analysis" % now.strftime("%Y%m%d%H%M%S")
         self._snapshot_desc = "%s - VM Analysis" % now.strftime("%Y-%m-%d %H:%M:%S")
         self._snapshot = None
