@@ -89,14 +89,14 @@ class VmAnalyzer:
             sslContext = ssl._create_unverified_context(),
             connectionPoolTimeout = 0
         )
-        session_stub = VimSessionOrientedStub(
+        self._session_stub = VimSessionOrientedStub(
             smart_stub,
             VimSessionOrientedStub.makeUserLoginMethod(
                 self._request["host_authentication"]["username"],
                 self._request["host_authentication"]["password"]
             )
         )
-        si = vim.ServiceInstance('ServiceInstance', session_stub)
+        si = vim.ServiceInstance('ServiceInstance', self._session_stub)
 
         if not si:
             raise Exception("Could not connect to %s" % vm_host)
@@ -150,7 +150,7 @@ class VmAnalyzer:
     def _find_vm_by_moref(self):
         vm_moref = self._request["provider"]["vm_moref"]
         print("Looking for virtual machine with MORef '%s'" % vm_moref)
-        vm = vim.VirtualMachine(vm_moref, stub=self._service_instance._stub)
+        vm = vim.VirtualMachine(vm_moref, stub=self._session_stub)
         #print("Found VM with name: %s" % vm.name)
         return vm
 
