@@ -322,7 +322,7 @@ class Scanning(Resource):
         post_body = request.get_json()      
         scan = ConcurrentScan(post_body)
         scan.start()
-        return "Scan started for VM MORef: " + post_body["provider"]["vm_moref"]
+        return "Scan started for VM MORef: " + post_body["vm"]["moref"]
 
 class Debug(Resource):
     def get(self): 
