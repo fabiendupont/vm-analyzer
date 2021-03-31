@@ -84,7 +84,7 @@ class VmAnalyzer:
         # https://github.com/vmware/pyvmomi/issues/347#issuecomment-297591340
         print("Connecting to %s as %s" % (self._vm_host, self._request["host_authentication"]["username"]))
         smart_stub = SmartStubAdapter(
-            host = vm_host,
+            host = self._vm_host,
             port = 443,
             sslContext = ssl._create_unverified_context(),
             connectionPoolTimeout = 0
@@ -99,7 +99,7 @@ class VmAnalyzer:
         si = vim.ServiceInstance('ServiceInstance', self._session_stub)
 
         if not si:
-            raise Exception("Could not connect to %s" % vm_host)
+            raise Exception("Could not connect to %s" % self._vm_host)
 
         return si
 
