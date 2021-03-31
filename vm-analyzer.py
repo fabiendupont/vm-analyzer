@@ -211,7 +211,7 @@ class VmAnalyzer:
             nbdkit_cmd.extend(['user=%s' % self._request["host_authentication"]["username"]])
             nbdkit_cmd.extend(['password=%s' % self._request["host_authentication"]["password"]])
             nbdkit_cmd.extend(['thumbprint=%s' % self._request["host_authentication"]["fingerprint"]])
-            nbdkit_cmd.extend(['file= %s' % disk["file"]])
+            nbdkit_cmd.extend(['file=%s' % disk["file"]])
             nbdkit_cmd.extend(['vm=moref=%s' % self._vm._moId])
             nbdkit_cmd.extend(['snapshot=%s' % self._snapshot._moId])
             print("ndbkit_cmd: %s" % nbdkit_cmd)
