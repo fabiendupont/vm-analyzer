@@ -150,8 +150,7 @@ class VmAnalyzer:
     def _find_vm_by_moref(self):
         vm_moref = self._request["provider"]["vm_moref"]
         print("Looking for virtual machine with MORef '%s'" % vm_moref)
-        vm = vim.VirtualMachine(vm_moref)
-        vm._stub = self._service_instance._stub
+        vm = vim.VirtualMachine(vm_moref, stub=self._service_instance._stub)
         print("Found VM with name: %s" % vm.name)
         return vm
 
