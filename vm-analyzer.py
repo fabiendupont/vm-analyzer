@@ -201,8 +201,8 @@ class VmAnalyzer:
 
         sockets_paths = []
         nbd_servers = []
-        for disk in vm_disks["disks"]:
-            socket_path = "/tmp/%s/%s.sock" % (self._vm_uuid, disk["id"])
+        for index, disk in enumerate(vm_disks):
+            socket_path = "/tmp/%s/%s.sock" % (self._vm_uuid, "d%0.5d" % index)
             nbdkit_env = { 'LD_LIBRARY_PATH': '/opt/vmware-vix-disklib-distrib/lib64' }
             nbdkit_cmd = ['/usr/sbin/nbdkit', '--readonly', '--exit-with-parent', '--newstyle']
             nbdkit_cmd.extend(['--unix', "/tmp/%s/%s.sock" % (self._vm_uuid, disk["id"])])
@@ -211,7 +211,7 @@ class VmAnalyzer:
             nbdkit_cmd.extend(['user=%s' % self._request["host_authentication"]["username"]])
             nbdkit_cmd.extend(['password=%s' % self._request["host_authentication"]["password"]])
             nbdkit_cmd.extend(['thumbprint=%s' % self._request["host_authentication"]["fingerprint"]])
-            nbdkit_cmd.extend(['file=[%s] %s' % (disk["storage_name"], disk["path"])])
+            nbdkit_cmd.extend(['file= %s' % disk["file"]])
             nbdkit_cmd.extend(['vm=moref=%s' % self._vm._moId])
             nbdkit_cmd.extend(['snapshot=%s' % self._snapshot._moId])
             print("ndbkit_cmd: %s" % nbdkit_cmd)
