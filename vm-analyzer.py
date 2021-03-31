@@ -66,6 +66,7 @@ class VmAnalyzer:
         self._service_instance = self._connect()
         self._vm_uuid = self._get_vm_uuid()
         self._vm = self._find_vm_by_uuid()
+        self._vm_host = self._get_vm_host()
         self._snapshot_name = "%s-vm-analysis" % now.strftime("%Y%m%d%H%M%S")
         self._snapshot_desc = "%s - VM Analysis" % now.strftime("%Y-%m-%d %H:%M:%S")
         self._snapshot = None
@@ -81,8 +82,7 @@ class VmAnalyzer:
 
     def _connect(self):
         # https://github.com/vmware/pyvmomi/issues/347#issuecomment-297591340
-        vm_host = self._get_vm_host()
-        print("Connecting to %s as %s" % (vm_host, self._request["host_authentication"]["username"]))
+        print("Connecting to %s as %s" % (self._vm_host, self._request["host_authentication"]["username"]))
         smart_stub = SmartStubAdapter(
             host = vm_host,
             port = 443,
@@ -173,7 +173,7 @@ class VmAnalyzer:
     def _get_vm_disks(self):
         host = self._vm.runtime.host
         print("Getting VM disk details")
-        href_slug = "/vms/" + self._request["provider"]["vm_moref"]
+        href_slug = "/vms/" + self._request["vm"]["moref"]
         return self._call_inventory_db(href_slug)["disks"]
 
         # for device in self._vm.config.hardware.device:
@@ -202,17 +202,17 @@ class VmAnalyzer:
         sockets_paths = []
         nbd_servers = []
         for disk in vm_disks["disks"]:
-            socket_path = "/tmp/%s/%s.sock" % (self._request["vm_uuid"], disk["id"])
+            socket_path = "/tmp/%s/%s.sock" % (self._vm_uuid, disk["id"])
             nbdkit_env = { 'LD_LIBRARY_PATH': '/opt/vmware-vix-disklib-distrib/lib64' }
             nbdkit_cmd = ['/usr/sbin/nbdkit', '--readonly', '--exit-with-parent', '--newstyle']
-            nbdkit_cmd.extend(['--unix', "/tmp/%s/%s.sock" % (self._request["vm_uuid"], disk["id"])])
+            nbdkit_cmd.extend(['--unix', "/tmp/%s/%s.sock" % (self._vm_uuid, disk["id"])])
             nbdkit_cmd.extend(['vddk', 'libdir=/opt/vmware-vix-disklib-distrib'])
-            nbdkit_cmd.extend(['server=%s' % self._request["authentication"]["hostname"]])
-            nbdkit_cmd.extend(['user=%s' % self._request["authentication"]["username"]])
-            nbdkit_cmd.extend(['password=%s' % self._request["authentication"]["password"]])
-            nbdkit_cmd.extend(['thumbprint=%s' % self._request["authentication"]["fingerprint"]])
+            nbdkit_cmd.extend(['server=%s' % self._vm_host])
+            nbdkit_cmd.extend(['user=%s' % self._request["host_authentication"]["username"]])
+            nbdkit_cmd.extend(['password=%s' % self._request["host_authentication"]["password"]])
+            nbdkit_cmd.extend(['thumbprint=%s' % self._request["host_authentication"]["fingerprint"]])
             nbdkit_cmd.extend(['file=[%s] %s' % (disk["storage_name"], disk["path"])])
-            nbdkit_cmd.extend(['vm=moref=%s' % vm_disks["metadata"]["vmware_moref"]])
+            nbdkit_cmd.extend(['vm=moref=%s' % self._vm._moId])
             nbdkit_cmd.extend(['snapshot=%s' % self._snapshot._moId])
             print("ndbkit_cmd: %s" % nbdkit_cmd)
             nbd_server = subprocess.Popen(nbdkit_cmd, env=nbdkit_env)
