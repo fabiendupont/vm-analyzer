@@ -64,13 +64,14 @@ class VmAnalyzer:
         print("Initializing VmAnalyzer at %s" % now.strftime("%Y-%m-%d %H:%M:%S"))
         self._inventory_db = self._get_inventory_db()
         self._service_instance = self._connect()
+        self._vm = self._find_vm_by_moref()
         self._vm_uuid = self._get_vm_uuid()
         self._snapshot_name = "%s-vm-analysis" % now.strftime("%Y%m%d%H%M%S")
         self._snapshot_desc = "%s - VM Analysis" % now.strftime("%Y-%m-%d %H:%M:%S")
         self._snapshot = None
 
-        if not os.path.exists("/tmp/%s" % self._request["vm_uuid"]):
-            os.mkdir("/tmp/%s" % self._request["vm_uuid"])
+        if not os.path.exists("/tmp/%s" % self._vm_uuid):
+            os.mkdir("/tmp/%s" % self._vm_uuid)
 
     def __del__(self):
         now = datetime.datetime.now()
@@ -132,18 +133,26 @@ class VmAnalyzer:
         host_href_slug = "/hosts/" + self._call_inventory_db(vm_href_slug)["host"]["id"]
         return self._call_inventory_db(host_href_slug)["name"]
 
-    def _find_vm_by_id(self, vm_id):
-        print("Looking for virtual machine with UUID '%s'" % vm_id)
-        # TODO: understand why FindByUuid fails
-        # search_index = self._service_instance.content.searchIndex
-        # vm = search_index.FindByUuid(None, vm_id, True, True)
-        view_manager = self._service_instance.content.viewManager
-        container = view_manager.CreateContainerView(self._service_instance.content.rootFolder, [vim.VirtualMachine], True)
-        for c in container.view:
-            if c.config.uuid == vm_id:
-                vm = c
-        if vm is None:
-            raise Exception("No virtual machine with UUID '%s'" % vm_id)
+    # def _find_vm_by_id(self, vm_id):
+    #     print("Looking for virtual machine with UUID '%s'" % vm_id)
+    #     # TODO: understand why FindByUuid fails
+    #     # search_index = self._service_instance.content.searchIndex
+    #     # vm = search_index.FindByUuid(None, vm_id, True, True)
+    #     view_manager = self._service_instance.content.viewManager
+    #     container = view_manager.CreateContainerView(self._service_instance.content.rootFolder, [vim.VirtualMachine], True)
+    #     for c in container.view:
+    #         if c.config.uuid == vm_id:
+    #             vm = c
+    #     if vm is None:
+    #         raise Exception("No virtual machine with UUID '%s'" % vm_id)
+    #     return vm
+      
+    def _find_vm_by_moref(self):
+        vm_moref = self._request["provider"]["vm_moref"]
+        print("Looking for virtual machine with MORef '%s'" % vm_moref)
+        vm = vim.VirtualMachine(vm_moref)
+        vm._stub = self._service_instance._stub
+        print("Found VM with name: %s" % vm.name)
         return vm
 
     def _create_snapshot(self):
@@ -321,7 +330,7 @@ class Scanning(Resource):
         post_body = request.get_json()      
         scan = ConcurrentScan(post_body)
         scan.start()
-        return "Scan started for VM UUID: " + post_body["vm_uuid"]
+        return "Scan started for VM MORef: " + post_body["provider"]["vm_moref"]
 
 class Debug(Resource):
     def get(self): 
