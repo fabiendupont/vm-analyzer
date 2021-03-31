@@ -151,7 +151,7 @@ class VmAnalyzer:
         vm_moref = self._request["provider"]["vm_moref"]
         print("Looking for virtual machine with MORef '%s'" % vm_moref)
         vm = vim.VirtualMachine(vm_moref, stub=self._service_instance._stub)
-        print("Found VM with name: %s" % vm.name)
+        #print("Found VM with name: %s" % vm.name)
         return vm
 
     def _create_snapshot(self):
