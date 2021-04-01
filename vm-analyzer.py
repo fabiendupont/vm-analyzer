@@ -52,10 +52,12 @@ class ConcurrentScan(threading.Thread):
         threading.Thread.__init__(self)
         self._request = post_body
         print("Initializing ConcurrentScan")
+        
   
     def run(self):
         vm_config = VmAnalyzer(self._request).get_vm_config()
         print("VM Config: %s" % vm_config)
+        
 
 class VmAnalyzer:
     def __init__(self, post_body):
@@ -73,15 +75,16 @@ class VmAnalyzer:
 
         if not os.path.exists("/tmp/%s" % self._vm_uuid):
             os.mkdir("/tmp/%s" % self._vm_uuid)
+            
 
     def __del__(self):
         now = datetime.datetime.now()
         self._remove_snapshot()
         self._disconnect()
         print("Terminating VmAnalyzer at %s" % now.strftime("%Y-%m-%d %H:%M:%S"))
+        
 
     def _connect(self):
-        # https://github.com/vmware/pyvmomi/issues/347#issuecomment-297591340
         print("Connecting to %s as %s" % (self._vm_host["name"], self._request["host_authentication"]["username"]))
         smart_stub = SmartStubAdapter(
             host = self._vm_host["name"],
@@ -102,6 +105,7 @@ class VmAnalyzer:
             raise Exception("Could not connect to %s" % self._vm_host["name"])
 
         return si
+      
 
     def _disconnect(self):
         try:
@@ -109,11 +113,13 @@ class VmAnalyzer:
         except:
             pass
           
+          
     def _get_inventory_db(self):
         inventory_hostname = os.environ["INVENTORY_SERVICE"] + "." + os.environ["POD_NAMESPACE"] + ".svc.cluster.local"
         inventory_socket   = inventory_hostname + ":" + os.environ["FORKLIFT_INVENTORY_SERVICE_PORT"]
         inventory_db       = "https://" + inventory_socket + "/providers/vsphere/" + self._request["provider"]["uid"]
         return inventory_db
+      
       
     def _call_inventory_db(self, href_slug):
         api_response = requests.get(self._inventory_db + href_slug, verify=os.environ["CA_TLS_CERTIFICATE"])
@@ -121,30 +127,26 @@ class VmAnalyzer:
             return json.loads(api_response.content)
         else:
             raise Exception("Failed call to inventory database, return code: %s" % api_response)
+          
 
     def _get_vm_uuid(self):
         print("Looking for UUID for virtual machine with MORef: %s" % self._request["vm"]["moref"])
         href_slug = "/vms/" + self._request["vm"]["moref"]
         return self._call_inventory_db(href_slug)["uuid"]
       
+      
     def _get_vm_host(self):
         print("Looking for host for virtual machine with MORef: %s" % self._request["vm"]["moref"])
         vm_href_slug = "/vms/" + self._request["vm"]["moref"]
         host_href_slug = "/hosts/" + self._call_inventory_db(vm_href_slug)["host"]["id"]
         return self._call_inventory_db(host_href_slug)
+      
 
     def _find_vm_by_uuid(self):
         print("Looking for virtual machine with UUID '%s'" % self._vm_uuid)
-        # TODO: understand why FindByUuid fails
         vm = self._service_instance.content.searchIndex.FindByUuid(uuid=self._vm_uuid, vmSearch=True, instanceUuid=False)
-        # view_manager = self._service_instance.content.viewManager
-        # container = view_manager.CreateContainerView(self._service_instance.content.rootFolder, [vim.VirtualMachine], True)
-        # for c in container.view:
-        #     if c.config.uuid == vm_id:
-        #         vm = c
-        # if vm is None:
-        #     raise Exception("No virtual machine with UUID '%s'" % vm_id)
         return vm
+      
       
     def _create_snapshot(self):
         print("Creating snapshot to protect the VM disks")
@@ -159,16 +161,19 @@ class VmAnalyzer:
         # Update the VM data
         self._vm.Reload()
         self._snapshot = self._vm.snapshot.currentSnapshot
+        
 
     def _remove_snapshot(self):
         print("Removing snapshot")
         if self._snapshot:
             WaitForTask(self._snapshot.RemoveSnapshot_Task(False))
+            
 
     def _path_win2lin(self, path):
         if not re.compile('^/').match(path):
             path = re.sub('^.*/', '/', path)
         return path
+      
 
     def _get_vm_disks(self):
         host = self._vm.runtime.host
@@ -176,29 +181,12 @@ class VmAnalyzer:
         href_slug = "/vms/" + self._request["vm"]["moref"]
         return self._call_inventory_db(href_slug)["disks"]
 
-        # for device in self._vm.config.hardware.device:
-        #     if type(device).__name__ == 'vim.vm.device.VirtualDisk':
-        #         datastore = device.backing.datastore
-        #         path = device.backing.fileName.replace("[%s] " % datastore.name, "")
-        #         hardware["disks"].append({
-        #             "id": device.backing.uuid,
-        #             "key": device.key,
-        #             "path": path,
-        #             "size": device.capacityInBytes,
-        #             "storage_name": datastore.name,
-        #             "storage_path": datastore.summary.url.replace("ds://", ""),
-        #             "is_sparse": device.backing.thinProvisioned,
-        #             "is_rdm": type(device.backing).__name__ == 'vim.vm.device.VirtualDisk.VirtualDiskRawDiskMappingVer1BackingInfo'
-        #         })
-        # return hardware
 
     def _get_vm_software(self, vm_disks):
         self._create_snapshot()
         print("Snapshot MORef: %s" % self._snapshot._moId)
 
         nbdkit_env = os.environ.copy()
-        #nbdkit_env['LD_LIBRARY_PATH'] = '/opt/vmware-vix-disklib-distrib/lib64:' # + env['LD_LIBRARY_PATH']
-
         sockets_paths = []
         nbd_servers = []
         for index, disk in enumerate(vm_disks):
@@ -308,6 +296,7 @@ class VmAnalyzer:
             for socket_path in sockets_paths:
                 os.remove(socket_path)
 
+
     def get_vm_config(self):
         vm_disks = self._get_vm_disks()
         vm_config = {
@@ -315,6 +304,7 @@ class VmAnalyzer:
             "software": self._get_vm_software(vm_disks),
         }
         return vm_config
+      
 
 class Scanning(Resource):
     def post(self):
@@ -322,10 +312,12 @@ class Scanning(Resource):
         scan = ConcurrentScan(post_body)
         scan.start()
         return "Scan started for VM MORef: " + post_body["vm"]["moref"]
+      
 
 class Debug(Resource):
     def get(self): 
         return "<h1>Debug</h1><p>Working</p>"
+      
 
 def main():     
     app = Flask(__name__)
