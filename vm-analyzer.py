@@ -56,7 +56,7 @@ class ConcurrentScan(threading.Thread):
   
     def run(self):
         vm_config = VmAnalyzer(self._request).get_vm_config()
-        print("VM Config: %s" % vm_config)
+        print("VM Config: %s" % vm_config["software"])
         
 
 class VmAnalyzer:
@@ -229,8 +229,8 @@ class VmAnalyzer:
             operating_systems = []
             for root in roots:
                 osh = {}
-                osh["filesystems"] = g.inspect_get_filesystems(root)
-                osh["mountpoints"] = g.inspect_get_mountpoints(root)
+                #osh["filesystems"] = g.inspect_get_filesystems(root)
+                #osh["mountpoints"] = g.inspect_get_mountpoints(root)
                 osh["name"] = g.inspect_get_product_name(root)
                 osh["major_version"] = g.inspect_get_major_version(root)
                 osh["minor_version"] = g.inspect_get_minor_version(root)
@@ -300,7 +300,7 @@ class VmAnalyzer:
     def get_vm_config(self):
         vm_disks = self._get_vm_disks()
         vm_config = {
-            "hardware": vm_disks,
+            "disks": vm_disks,
             "software": self._get_vm_software(vm_disks),
         }
         return vm_config
