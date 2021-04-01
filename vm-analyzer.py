@@ -230,7 +230,7 @@ class VmAnalyzer:
             for root in roots:
                 osh = {}
                 #osh["filesystems"] = g.inspect_get_filesystems(root)
-                #osh["mountpoints"] = g.inspect_get_mountpoints(root)
+                osh["mountpoints"] = g.inspect_get_mountpoints(root)
                 osh["name"] = g.inspect_get_product_name(root)
                 osh["major_version"] = g.inspect_get_major_version(root)
                 osh["minor_version"] = g.inspect_get_minor_version(root)
