@@ -27,7 +27,7 @@ from flask_restful import Resource, Api, reqparse
 MANIFEST = {
     "files": [
         { "path": "/etc/*.conf", "collect_content": False },
-        { "path": "/etc/hosts", "collect_content": False },
+        { "path": "/etc/hosts", "collect_content": True },
         { "path": "/etc/redhat-access-insights/machine-id", "collect_content": False },
         { "path": "c:/windows/system32/*.scr", "collect_content": False },
         { "path": "c:/windows/system32/msi*.*", "collect_content": False },
@@ -56,9 +56,14 @@ class ConcurrentScan(threading.Thread):
   
     def run(self):
         vm_config = VmAnalyzer(self._request).get_vm_config()
-        print("VM Config: %s" % vm_config["software"])
+        print("VM Config: ")
+        print("\tMountpoints: %s" % vm_config["software"][0]["mountpoints"])
+        print("\tOperating System: %s" % vm_config["software"][0]["name"])
+        print("\tHostname: %s" % vm_config["software"][0]["hostname"])
+        for file in vm_config["software"][0]["files"]:
+            if file["name"] == '/etc/hosts':
+                print("/etc/hosts: %s" % file["content"])
         
-
 class VmAnalyzer:
     def __init__(self, post_body):
         now = datetime.datetime.now()
@@ -202,13 +207,11 @@ class VmAnalyzer:
             nbdkit_cmd.extend(['file=%s' % disk["file"]])
             nbdkit_cmd.extend(['vm=moref=%s' % self._vm._moId])
             nbdkit_cmd.extend(['snapshot=%s' % self._snapshot._moId])
-            print("ndbkit_cmd: %s" % nbdkit_cmd)
             nbd_server = subprocess.Popen(nbdkit_cmd, env=nbdkit_env)
 
             # Allowing some time for the socket to be created
             for i in range(10):
                 if os.path.exists(socket_path):
-                    print("Socket_path: %s" % socket_path)
                     break
                 time.sleep(1)
 
