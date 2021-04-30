@@ -39,7 +39,7 @@ MANIFEST = {
         { "path": "C://Program Files/IBM/WebSphere/AppServer", "collect_content": False },
         { "path": "/etc/group", "collect_content": True },
         { "path": "/etc/oraInst.loc", "collect_content": True },
-        { "path": "/u01/app/oraInventory", "collect_content": False },
+        { "path": "/u01/app/oraInventory", "collect_content": True },
         { "path": "/opt/mssql/bin/mssql-conf", "collect_content": False },
         { "path": "/usr/sap/hostctrl/exe/saphostctrl", "collect_content": False },
         { "path": "/etc/.ibm/registry/InstallationManager.dat", "collect_content": False}
@@ -63,6 +63,8 @@ class ConcurrentScan(threading.Thread):
         for file in vm_config["software"][0]["files"]:
             if file["name"] == '/etc/oraInst.loc':
                 print("/etc/oraInst.loc: %s" % file["content"])
+            if file["name"] == '/u01/app/oraInventory':
+                print("/u01/app/oraInventory: %s" % file["content"])
         
 class VmAnalyzer:
     def __init__(self, post_body):
