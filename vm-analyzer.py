@@ -27,7 +27,7 @@ from flask_restful import Resource, Api, reqparse
 MANIFEST = {
     "files": [
         { "path": "/etc/*.conf", "collect_content": False },
-        { "path": "/etc/hosts", "collect_content": True },
+        { "path": "/etc/hosts", "collect_content": False },
         { "path": "/etc/redhat-access-insights/machine-id", "collect_content": False },
         { "path": "c:/windows/system32/*.scr", "collect_content": False },
         { "path": "c:/windows/system32/msi*.*", "collect_content": False },
@@ -37,7 +37,7 @@ MANIFEST = {
         { "path": "C://Program Files/Microsoft SQL Server/130", "collect_content": False },
         { "path": "C://Program Files/Microsoft SQL Server/140", "collect_content": False },
         { "path": "C://Program Files/IBM/WebSphere/AppServer", "collect_content": False },
-        { "path": "/etc/group", "collect_content": True },
+        { "path": "/etc/group", "collect_content": False },
         { "path": "/etc/oraInst.loc", "collect_content": True },
         { "path": "/u01/app/oraInventory", "collect_content": True },
         { "path": "/opt/mssql/bin/mssql-conf", "collect_content": False },
