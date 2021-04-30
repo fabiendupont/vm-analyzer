@@ -61,8 +61,8 @@ class ConcurrentScan(threading.Thread):
         print("\tOperating System: %s" % vm_config["software"][0]["name"])
         print("\tHostname: %s" % vm_config["software"][0]["hostname"])
         for file in vm_config["software"][0]["files"]:
-            if file["name"] == '/etc/hosts':
-                print("/etc/hosts: %s" % file["content"])
+            if file["name"] == '/etc/oraInst.loc':
+                print("/etc/oraInst.loc: %s" % file["content"])
         
 class VmAnalyzer:
     def __init__(self, post_body):
