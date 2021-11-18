@@ -24,9 +24,8 @@ fi
 #echo "...  OK  ..."
 #echo
 
-if [ ! -f "/data/input.json" ] ; then
-  echo "File /data/input.json not found. Exiting."
-  exit 1
-fi
+#exec  nbdkit -U - memory 1G --readonly --exit-with-parent --newstyle --run 'python3 /usr/local/bin/break "$unixsocket"'
+exec /usr/local/bin/vm-analyzer
 
-exec /usr/local/bin/vm-analyzer /data/input.json
+#exec /usr/local/bin/break
+#/usr/local/bin/break

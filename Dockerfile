@@ -9,13 +9,18 @@ RUN mkdir /data && \
         nbdkit \
         nbdkit-plugin-vddk \
         python3 \
-        python3-libguestfs \
-        python3-pyvmomi && \
-    yum clean all
+        gdb \
+        python3-libguestfs &&\
+    yum clean all && \
+    pip3 install flask \
+        flask-restful \
+        pyvmomi
 
 COPY vm-analyzer.py /usr/local/bin/vm-analyzer
+#COPY break2.py /usr/local/bin/break
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY manifest.json /data/manifest.json
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 USER ${USER_UID}
+

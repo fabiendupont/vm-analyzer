@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vm-analyzer
+labels:
+  app: vm-analyzer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vm-analyzer
+  template:
+    metadata:
+      labels:
+        app: vm-analyzer
+      name: vm-analyzer
+    spec:
+      containers:
+        - name: vm-analyzer
+          image: 'quay.io/pmcgowan/vm-analyzer:latest'
+          ports:
+            - name: flask
+              containerPort: 5000
+          env:
+            - name: CA_TLS_CERTIFICATE
+              value: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: PYTHONUNBUFFERED
+              value: '1'
+            - name: LIBGUESTFS_TRACE
+              value: '0'
+            - name: LIBGUESTFS_DEBUG
+              value: '0'
+            - name: LD_PRELOAD
+              value: '/lib64/libSegFault.so'
+            - name: INVENTORY_SERVICE
+              value: 'forklift-inventory'
+          volumeMounts:
+            - name: vddk-vol-mount
+              mountPath: /opt
+      initContainers:
+        - name: vddk
+          image: vddk:latest
+          volumeMounts:
+            - name: vddk-vol-mount
+              mountPath: /opt
+      volumes:
+        - name: vddk-vol-mount
+          emptyDir: {}
+      
